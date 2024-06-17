@@ -1,0 +1,29 @@
+feeder:
+  #push_address: tcp://*:8000
+  push_address: tcp://192.168.101.237:7999
+  sub_date: 0
+  sub_time: 0
+  wal: wal:///../data/feed.stock.wal?keep=100
+  enable_trace: true
+  enable_spot: true
+  enable_future: true
+  enable_option: true
+  enable_order: true
+  enable_knock: true
+  enable_queue: false
+  holo_sz_cycle: 500
+  holo_sh_cycle: 500
+  holo_threads: 10
+
+insight:
+  server_host: 221.6.6.131
+  server_port: 9242
+  username: MDCBETA2000106
+  password: .H.4t+_pNa4KucyXk
+  # api日志, 默认不打开
+  apilog_flag: 1
+  # 压缩配置, 行情托管用户需要禁止SDK进行数据解压缩, 互联网用户需配置
+  compress_flag: 1
+  # 静态信息的数据位置
+  static_dir: ../static_data
+
