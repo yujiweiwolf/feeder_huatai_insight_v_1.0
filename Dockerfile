@@ -1,30 +1,27 @@
 FROM ubuntu:20.04
-MAINTAINER bajizhh <bajizhh@gmail.com>
 
 # --------------------------------------------------
-# setup locale
-RUN apt-get update && apt-get install -y --force-yes --no-install-recommends locales tzdata
-RUN locale-gen en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US.UTF-8
-ENV LD_LIBRARY_PATH .:/usr/local/lib
+ENV LC_ALL=en_US.UTF-8 \
+  LANG=en_US.UTF-8 \
+  LANGUAGE=en_US.UTF-8 \
+  LD_LIBRARY_PATH=.:/usr/local/lib
+# setup locale and timezone
+RUN apt-get update && apt-get install -y --force-yes --no-install-recommends locales tzdata; \
+  locale-gen en_US.UTF-8; \
+  ln -fs /usr/share/zoneinfo/Asia/Shanghai /etc/localtime; \
+  echo Asia/Shanghai > /etc/timezone; dpkg-reconfigure -f noninteractive tzdata; \
+  ulimit -c unlimited; echo "* - nofile 6553600" >> /etc/security/limits.conf; \
+  rm -rf /tmp/*; apt-get clean; rm -rf /var/lib/apt/lists/*;
+# --------------------------------------------------
 
-# setup Timezone
-RUN rm -rf /etc/localtime; ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-RUN echo Asia/Shanghai > /etc/timezone; dpkg-reconfigure -f noninteractive tzdata
-
-# RUN echo "* - nofile 6553600" >> /etc/security/limits.conf
-# clean
-# RUN rm -rf /tmp/*; apt-get clean; rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libgssapi-krb5-2
 
 # ==================================================
-WORKDIR /opt/huatai_insight_feeder/bin
-CMD ["./huatai_insight_feeder"]
+WORKDIR /opt/feeder_huatai_insight/bin
+CMD ["./feeder_huatai_insight"]
 
 # --------------------------------------------------
-RUN apt-get update && apt-get install -y libgssapi-krb5-2
-RUN cd /opt/huatai_insight_feeder; mkdir conf log data tmp static_data
-COPY bin/huatai_insight_feeder bin/*.so* /opt/huatai_insight_feeder/bin/
 
-RUN rm -rf /tmp/*; apt-get clean; rm -rf /var/lib/apt/lists/*
+RUN cd /opt/feeder_huatai_insight; mkdir conf log data tmp static_data
+COPY feeder_huatai_insight *.so* /opt/feeder_huatai_insight/bin/
+COPY *.pem /opt/feeder_huatai_insight/conf/
