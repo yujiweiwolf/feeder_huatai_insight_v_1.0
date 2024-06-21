@@ -86,7 +86,7 @@ namespace co {
             fout_.flush();
         }
         // 查询静态信息
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 5; i++) {
             std::unique_ptr<MDQueryRequest> request(new MDQueryRequest());
             request->set_querytype(QUERY_TYPE_LATEST_BASE_INFORMATION);
             SecuritySourceType* security_source_type = request->add_securitysourcetype();
@@ -101,17 +101,9 @@ namespace co {
             } else if (i == 2) {
                 security_source_type->set_securityidsource(CNI);
             } else if (i == 3) {
-                security_source_type->set_securityidsource(CSI);  // 无CSI
+                security_source_type->set_securityidsource(XBSE);  // 无CSI
             } else if (i == 4) {
                 security_source_type->set_securityidsource(CCFX);
-            } else if (i == 5) {
-                security_source_type->set_securityidsource(XSGE);
-            } else if (i == 6) {
-                security_source_type->set_securityidsource(INE);
-            } else if (i == 7) {
-                security_source_type->set_securityidsource(XDCE);
-            } else if (i == 8) {
-                security_source_type->set_securityidsource(XZCE);
             }
 
             std::vector<MDQueryResponse*>* responses = nullptr;
@@ -199,8 +191,17 @@ namespace co {
                         }
                         string code = p.htscsecurityid();
                         string std_code;
-                        int8_t market = 0;
-                        TransfromCode(code, std_code, market); // 上海、深圳、CSI、CNI，code = std_code
+                        int64_t market = Market2Std(p.securityidsource());
+                        if (market == kMarketSZ || market == kMarketSH || market == kMarketCSI || market == kMarketCNI || market == kMarketBJ) {
+                            std_code = p.htscsecurityid();
+                        } else {
+                            string securityid = p.htscsecurityid();
+                            auto pos = securityid.find('.');
+                            if (pos == securityid.npos) {
+                                continue;
+                            }
+                            std_code = securityid.substr(0, pos) + Market2Suffix(market);
+                        }
                         if (std_code.length() > 0) {
                             QContextPtr ctx = QServer::Instance()->GetContext(code);
                             if (!ctx) {
@@ -270,11 +271,41 @@ namespace co {
             SetSubInfo(*subscribe_all, MD_TICK, BondType);
             SetSubInfo(*subscribe_all, MD_TICK, IndexType);
         }
+        // 只保留中金所的期权、期货
         if (opt->enable_future()) {
-            SetSubInfo(*subscribe_all, MD_TICK, FuturesType);
+            SubscribeBySourceTypeDetail* detail = subscribe_all->add_subscribebysourcetypedetail();
+            SecuritySourceType* sub_info = new SecuritySourceType();
+            sub_info->set_securityidsource(CCFX);
+            sub_info->set_securitytype(FuturesType);
+            detail->set_allocated_securitysourcetypes(sub_info);
+            detail->add_marketdatatypes(MD_TICK);
         }
+        // 只保留上交所、深交所、中金所的期权
         if (opt->enable_option()) {
-            SetSubInfo(*subscribe_all, MD_TICK, OptionType);
+            {
+                SubscribeBySourceTypeDetail* detail = subscribe_all->add_subscribebysourcetypedetail();
+                SecuritySourceType* sub_info = new SecuritySourceType();
+                sub_info->set_securityidsource(XSHG);
+                sub_info->set_securitytype(OptionType);
+                detail->set_allocated_securitysourcetypes(sub_info);
+                detail->add_marketdatatypes(MD_TICK);
+            }
+            {
+                SubscribeBySourceTypeDetail *detail = subscribe_all->add_subscribebysourcetypedetail();
+                SecuritySourceType *sub_info = new SecuritySourceType();
+                sub_info->set_securityidsource(XSHE);
+                sub_info->set_securitytype(OptionType);
+                detail->set_allocated_securitysourcetypes(sub_info);
+                detail->add_marketdatatypes(MD_TICK);
+            }
+            {
+                SubscribeBySourceTypeDetail* detail = subscribe_all->add_subscribebysourcetypedetail();
+                SecuritySourceType* sub_info = new SecuritySourceType();
+                sub_info->set_securityidsource(CCFX);
+                sub_info->set_securitytype(OptionType);
+                detail->set_allocated_securitysourcetypes(sub_info);
+                detail->add_marketdatatypes(MD_TICK);
+            }
         }
         if (opt->enable_order()) {
             SetSubInfo(*subscribe_all, MD_ORDER, StockType);

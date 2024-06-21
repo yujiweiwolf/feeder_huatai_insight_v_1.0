@@ -4,16 +4,16 @@ feeder:
   sub_date: 0
   sub_time: 0
   wal: wal:///../data/feed.stock.wal?keep=100
-  enable_trace: true
+  enable_trace: false
   enable_spot: true
   enable_future: true
   enable_option: true
   enable_order: true
   enable_knock: true
   enable_queue: false
-  holo_sz_cycle: 500
-  holo_sh_cycle: 500
-  holo_threads: 10
+  holo_sz_cycle: 0
+  holo_sh_cycle: 0
+  holo_threads: 0
 
 insight:
   server_host: 221.6.6.131
