@@ -36,15 +36,16 @@ namespace co {
             return;
         }
         handler_ = new InsightHandler();
+        handler_->Start();
         client_->RegistHandle(handler_);
         Login();
         QueryContracts();
         SubQuotation();
-		LOG_INFO << "server startup successfully";
+        LOG_INFO << "server startup successfully";
         // ------------------------------------------------------------
         QServer::Instance()->Wait();
-		Stop();
-		QServer::Instance()->Stop();
+        Stop();
+        QServer::Instance()->Stop();
     };
 
     void InsightServer::Stop() {

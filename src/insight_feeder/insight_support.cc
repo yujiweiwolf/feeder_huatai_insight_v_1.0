@@ -44,10 +44,12 @@ namespace co {
 
     int8_t Status2Std(const string& _status) {
         int8_t state = kStateOK;
-        if (_status == "8") {
-            state = kStateSuspension;
-        } else if (_status == "9") {
-            state = kStateBreak;
+        if (!_status.empty()) {
+            if (_status[0] == '8') {
+                state = kStateSuspension;
+            } else if (_status[0] == '9') {
+                state = kStateBreak;
+            }
         }
         return state;
     }
@@ -96,7 +98,7 @@ namespace co {
     }
 
     string Parse(const MDStock& p) {
-        string code = p.htscsecurityid();
+        const std::string& code = p.htscsecurityid();
         QContextPtr ctx = QServer::Instance()->GetContext(code);
         if (!ctx) {
             ctx = QServer::Instance()->NewContext(code, code);
@@ -124,8 +126,8 @@ namespace co {
         m.high = i2f(p.highpx());
         m.low = i2f(p.lowpx());
         m.close = i2f(p.closepx());
-        m.avg_bid_price = i2f(p.weightedavgbuypx());
-        m.avg_ask_price = i2f(p.weightedavgsellpx());
+//        m.avg_bid_price = i2f(p.weightedavgbuypx());
+//        m.avg_ask_price = i2f(p.weightedavgsellpx());
         // m.open_interest = 0;
         // m.close = 0;
         // m.settle = 0;
@@ -179,7 +181,7 @@ namespace co {
     }
 
     string Parse(const MDFund& p) {
-        string code = p.htscsecurityid();
+        const std::string& code = p.htscsecurityid();
         QContextPtr ctx = QServer::Instance()->GetContext(code);
         if (!ctx) {
             ctx = QServer::Instance()->NewContext(code, code);
@@ -241,7 +243,7 @@ namespace co {
     }
 
     string Parse(const MDBond& p) {
-        string code = p.htscsecurityid();
+        const std::string& code = p.htscsecurityid();
         QContextPtr ctx = QServer::Instance()->GetContext(code);
         if (!ctx) {
             ctx = QServer::Instance()->NewContext(code, code);
@@ -303,7 +305,7 @@ namespace co {
     }
 
     string Parse(const MDIndex& p) {
-        string code = p.htscsecurityid();
+        const std::string& code = p.htscsecurityid();
         QContextPtr ctx = QServer::Instance()->GetContext(code);
         if (!ctx) {
             ctx = QServer::Instance()->NewContext(code, code);
@@ -366,7 +368,7 @@ namespace co {
         if (p.ordertype() >= 11 && p.ordertype() <= 15) {
             return "";
         }
-        string code = p.htscsecurityid();
+        const std::string& code = p.htscsecurityid();
         if (code.length() != 9) {
             return "";
         }
@@ -456,7 +458,7 @@ namespace co {
     }
 
     string Parse(const MDTransaction& p) {
-        string code = p.htscsecurityid();
+        const std::string& code = p.htscsecurityid();
         if (code.length() != 9) {
             return "";
         }
@@ -564,7 +566,7 @@ namespace co {
 
     // 商品期权，中金所期权
     string Parse(const MDOption& p) {
-        string code = p.htscsecurityid();
+        const std::string& code = p.htscsecurityid();
         string std_code;
         int64_t market = Market2Std(p.securityidsource());
         if (market == 0) {
@@ -577,7 +579,7 @@ namespace co {
             if (pos == code.npos) {
                 return "";
             }
-            std_code = code.substr(0, pos) + string(Market2Suffix(market));
+            std_code = code.substr(0, pos) + Market2Suffix(market);
         }
         QContextPtr ctx = QServer::Instance()->GetContext(code);
         if (!ctx) {
@@ -657,7 +659,7 @@ namespace co {
     }
 
     string Parse(const MDFuture& p) {
-        string code = p.htscsecurityid();
+        const std::string& code = p.htscsecurityid();
         string std_code;
         int64_t market = Market2Std(p.securityidsource());
         auto pos = code.find('.');

@@ -78,6 +78,7 @@ namespace co {
             apilog_flag_ = getInt(feeder, "apilog_flag");
             compress_flag_ = getInt(feeder, "compress_flag");
             static_dir_ = getStr(feeder, "static_dir");
+            cpu_affinity_ = getInt(feeder, "cpu_affinity");
             stringstream ss;
             ss << "+-------------------- configuration begin --------------------+" << endl;
             ss << opt_->ToString() << endl;
@@ -90,6 +91,7 @@ namespace co {
                << "  apilog_flag: " << apilog_flag_ << endl
                << "  compress_flag: " << compress_flag_ << endl
                << "  static_dir: " << static_dir_ << endl
+               << "  cpu_affinity: " << cpu_affinity_ << endl
                << "+-------------------- configuration end   --------------------+";
             LOG_INFO << endl << ss.str();
         } catch (std::exception& e) {

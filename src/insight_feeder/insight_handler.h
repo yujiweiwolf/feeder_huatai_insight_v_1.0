@@ -4,6 +4,7 @@
 #include <string>
 #include <mutex>
 #include <thread>
+#include <boost/lockfree/queue.hpp>
 
 #include <x/x.h>
 #include "feeder/feeder.h"
@@ -16,6 +17,8 @@ namespace co {
 
     class InsightHandler : public MessageHandle {
     public:
+        InsightHandler();
+        ~InsightHandler();
         void ClearQueryStatus();
         string WaitQueryStatus();
 
@@ -59,11 +62,18 @@ namespace co {
 
         void OnReconnect();
 
+        void Start();
+
+        void Run();
+
     private:
         std::mutex mutex_;
 
         bool query_over_ = false;
         string query_error_;
+
+        std::shared_ptr<std::thread> thread_;
+        boost::lockfree::queue<com::htsc::mdc::insight::model::MarketData*, boost::lockfree::fixed_sized<false>> queue_;
     };
 
 
