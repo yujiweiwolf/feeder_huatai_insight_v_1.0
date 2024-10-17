@@ -26,6 +26,4 @@ insight:
   compress_flag: 1
   # 静态信息的数据位置
   static_dir: ../static_data
-  #
-  cpu_affinity: 1
 

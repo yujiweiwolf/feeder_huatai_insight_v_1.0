@@ -24,7 +24,7 @@ namespace co {
         }
 
         // open_response_callback();
-        close_heartbeat_trace();//关闭heartbeat_trace，不输出心跳日志消息
+        close_heartbeat_trace();  // 关闭heartbeat_trace，不输出心跳日志消息
         close_response_callback();
         init_env();
         string cert_dir = Config::Instance()->cert_dir();
@@ -36,8 +36,9 @@ namespace co {
             return;
         }
         handler_ = new InsightHandler();
-        handler_->Start();
+
         client_->RegistHandle(handler_);
+        client_->set_handle_pool_thread_count(1);
         Login();
         QueryContracts();
         SubQuotation();
@@ -69,6 +70,7 @@ namespace co {
             LOG_ERROR << "login failed: " << get_error_code_value(rc) << ", retry in 3s ...";
             x::Sleep(3000);
         }
+        LOG_INFO << "handle_pool_thread_count: " << client_->handle_pool_thread_count();
     }
 
     void InsightServer::QueryContracts() {

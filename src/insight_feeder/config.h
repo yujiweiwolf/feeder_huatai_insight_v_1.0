@@ -38,9 +38,6 @@ namespace co {
         inline string static_dir() {
             return static_dir_;
         }
-        inline int cpu_affinity() {
-            return cpu_affinity_;
-        }
 
         inline QOptionsPtr opt() {
             return opt_;
@@ -67,6 +64,5 @@ namespace co {
         string static_dir_;
         int apilog_flag_ = 0;
         int compress_flag_ = 0;
-        int cpu_affinity_ = 0;
     };
 }

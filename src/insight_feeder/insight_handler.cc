@@ -1,13 +1,6 @@
-#include "config.h"
 #include "insight_handler.h"
 
 namespace co {
-
-    InsightHandler::InsightHandler() : queue_(160000) {
-    }
-
-    InsightHandler::~InsightHandler() {
-    }
 
     void InsightHandler::ClearQueryStatus() {
         query_over_ = false;
@@ -25,135 +18,110 @@ namespace co {
         // pass
     }
 
-    void InsightHandler::Start() {
-        thread_ = std::make_shared<std::thread>(std::bind(&InsightHandler::Run, this));
-    }
-
-    void InsightHandler::Run() {
-        // BindCPU();
-        int cpu_affinity = Config::Instance()->cpu_affinity();
-        if (cpu_affinity > 0) {
-            x::SetCPUAffinity(cpu_affinity);
-        }
-        while (true) {
-            com::htsc::mdc::insight::model::MarketData* out;
-            while (true) {
-                if (queue_.pop(out)) {
-                    break;
-                }
-            }
-            if (!out) {
-                continue;
-            }
-            const com::htsc::mdc::insight::model::MarketData& data = *out;
-            switch (data.marketdatatype()) {
-                case MD_CONSTANT:
-                {//静态信息
-                    if (data.has_mdconstant()) {
-                        const MDBasicInfo& p = data.mdconstant();
-                        string insight_code = p.htscsecurityid();
-                        QContextPtr ctx = QServer::Instance()->GetContext(insight_code);
-                        if (!ctx) {
-                            string std_code = insight_code;
-                            ctx = QServer::Instance()->NewContext(insight_code, std_code);
-                        }
-                        string name = p.symbol();
-                        try {
-                            name = x::GBKToUTF8(name);
-                        } catch (...) {
-                            // pass
-                        }
-                        co::fbs::QTickT& tick = ctx->tick();
-                        tick.name = name;
-                    }
-                    break;
-                }
-                case MD_TICK: {//快照
-                    if (data.has_mdstock()) {//股票
-                        const MDStock& p = data.mdstock();
-                        // LOG_INFO << p.Utf8DebugString();
-                        string raw = Parse(p);
-                        if (!raw.empty()) {
-                            QServer::Instance()->PushQTick(raw);
-                        }
-                    } else if (data.has_mdbond()) {//债券
-                        const MDBond& p = data.mdbond();
-                        string raw = Parse(p);
-                        if (!raw.empty()) {
-                            QServer::Instance()->PushQTick(raw);
-                        }
-                    } else if (data.has_mdindex()) {//指数
-                        const MDIndex& p = data.mdindex();
-                        string raw = Parse(p);
-                        if (!raw.empty()) {
-                            QServer::Instance()->PushQTick(raw);
-                        }
-                    } else if (data.has_mdfund()) {//基金
-                        const MDFund& p = data.mdfund();
-                        string raw = Parse(p);
-                        if (!raw.empty()) {
-                            QServer::Instance()->PushQTick(raw);
-                        }
-                    } else if (data.has_mdoption()) {//期权
-                        const MDOption& p = data.mdoption();
-                        string raw = Parse(p);
-                        if (!raw.empty()) {
-                            QServer::Instance()->PushQTick(raw);
-                        }
-                    } else if (data.has_mdfuture()) {//期货
-                        const MDFuture& p = data.mdfuture();
-                        string raw = Parse(p);
-                        if (!raw.empty()) {
-                            QServer::Instance()->PushQTick(raw);
-                        }
-                    } else if (data.has_mdforex()) {//外汇
-                        /* std::string security_type = get_security_type_name(data.mdforex().securitytype());
-                         save_debug_string(base_forder_, data_type, security_type,
-                             data.mdforex().htscsecurityid(), data.mdforex().ShortDebugString());*/
-                    } else if (data.has_mdspot()) {//现货
-                        /* std::string security_type = get_security_type_name(data.mdspot().securitytype());
-                         save_debug_string(base_forder_, data_type, security_type,
-                             data.mdspot().htscsecurityid(), data.mdspot().ShortDebugString());*/
-                    }
-                    break;
-                }
-                case MD_ORDER:
-                {//逐笔委托
-                    if (data.has_mdorder()) {
-                        const MDOrder& p = data.mdorder();
-                        string raw = Parse(p);
-                        if (!raw.empty()) {
-                            QServer::Instance()->PushQOrder(raw);
-                        }
-                        //std::string security_type = get_security_type_name(data.mdorder().securitytype());
-                        //save_debug_string(base_forder_, data_type, security_type,
-                        //    data.mdorder().htscsecurityid(), data.mdorder().ShortDebugString());
-                    }
-                    break;
-                }
-                case MD_TRANSACTION:
-                { //逐笔成交
-                    if (data.has_mdtransaction()) {
-                        const MDTransaction& p = data.mdtransaction();
-                        string raw = Parse(p);
-                        if (!raw.empty()) {
-                            QServer::Instance()->PushQKnock(raw);
-                        }
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-            delete out;
-        }
-    }
-
+    // 单线程处理，去掉锁
     void InsightHandler::OnMarketData(const com::htsc::mdc::insight::model::MarketData& data) {
-        com::htsc::mdc::insight::model::MarketData* item = new com::htsc::mdc::insight::model::MarketData;
-        (*item).CopyFrom(data);
-        queue_.push(item);
-        return;
+        // std::unique_lock<std::mutex> lock(mutex_);
+        //获取数据类型
+        switch (data.marketdatatype()) {
+        case MD_CONSTANT:
+        {//静态信息
+            if (data.has_mdconstant()) {
+                const MDBasicInfo& p = data.mdconstant();
+                string insight_code = p.htscsecurityid();
+                QContextPtr ctx = QServer::Instance()->GetContext(insight_code);
+                if (!ctx) {
+                    string std_code = insight_code;
+                    ctx = QServer::Instance()->NewContext(insight_code, std_code);
+                }
+                string name = p.symbol();
+                try {
+                    name = x::GBKToUTF8(name);
+                } catch (...) {
+                    // pass
+                }
+                co::fbs::QTickT& tick = ctx->tick();
+                tick.name = name;
+            }
+            break;
+        }
+        case MD_TICK: {//快照
+            if (data.has_mdstock()) {//股票
+                const MDStock& p = data.mdstock();
+                // LOG_INFO << p.Utf8DebugString();
+                string raw = Parse(p);
+                if (!raw.empty()) {
+                    QServer::Instance()->PushQTick(raw);
+                }
+            } else if (data.has_mdbond()) {//债券
+                const MDBond& p = data.mdbond();
+                string raw = Parse(p);
+                if (!raw.empty()) {
+                    QServer::Instance()->PushQTick(raw);
+                }
+            } else if (data.has_mdindex()) {//指数
+                const MDIndex& p = data.mdindex();
+                string raw = Parse(p);
+                if (!raw.empty()) {
+                    QServer::Instance()->PushQTick(raw);
+                }
+            } else if (data.has_mdfund()) {//基金
+                const MDFund& p = data.mdfund();
+                string raw = Parse(p);
+                if (!raw.empty()) {
+                    QServer::Instance()->PushQTick(raw);
+                }
+            } else if (data.has_mdoption()) {//期权
+                const MDOption& p = data.mdoption();
+                string raw = Parse(p);
+                if (!raw.empty()) {
+                    QServer::Instance()->PushQTick(raw);
+                }
+            } else if (data.has_mdfuture()) {//期货
+                const MDFuture& p = data.mdfuture();
+                string raw = Parse(p);
+                if (!raw.empty()) {
+                    QServer::Instance()->PushQTick(raw);
+                }
+            } else if (data.has_mdforex()) {//外汇
+               /* std::string security_type = get_security_type_name(data.mdforex().securitytype());
+                save_debug_string(base_forder_, data_type, security_type,
+                    data.mdforex().htscsecurityid(), data.mdforex().ShortDebugString());*/
+            } else if (data.has_mdspot()) {//现货
+               /* std::string security_type = get_security_type_name(data.mdspot().securitytype());
+                save_debug_string(base_forder_, data_type, security_type,
+                    data.mdspot().htscsecurityid(), data.mdspot().ShortDebugString());*/
+            }
+            break;
+        }
+        case MD_ORDER:
+        {//逐笔委托
+            if (data.has_mdorder()) {
+                const MDOrder& p = data.mdorder();
+                string raw = Parse(p);
+                if (!raw.empty()) {
+                    QServer::Instance()->PushQOrder(raw);
+                }
+
+                //std::string security_type = get_security_type_name(data.mdorder().securitytype());
+                //save_debug_string(base_forder_, data_type, security_type,
+                //    data.mdorder().htscsecurityid(), data.mdorder().ShortDebugString());
+            }
+            break;
+        }
+        case MD_TRANSACTION:
+        { //逐笔成交
+            if (data.has_mdtransaction()) {
+                const MDTransaction& p = data.mdtransaction();
+                string raw = Parse(p);
+                if (!raw.empty()) {
+                    QServer::Instance()->PushQKnock(raw);
+                }
+            }
+            break;
+        }
+        default:
+            break;
+        }
     }
 
     void InsightHandler::OnPlaybackPayload(const PlaybackPayload& payload) {
