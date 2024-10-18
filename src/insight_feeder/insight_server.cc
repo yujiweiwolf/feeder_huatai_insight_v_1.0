@@ -84,7 +84,7 @@ namespace co {
         if (!fout_.is_open()) {
             fout_.open(csv_file, std::ios::out | std::ios::trunc);
             __info << "create csv file: " << csv_file;
-            string csv_head = "HTSCSecurityID,Symbol,SecurityIDSource,SecurityType,ListDate,TickSize,ExchangeSymbol,OptionUnderlyingSecurityID,OptionUnderlyingSymbol,OptionCallOrPut,OptionTickSize,OptionExercisePrice,OptionStartDate,OptionEndDate,OptionExerciseDate,OptionDeliveryDate,OptionContractMultiplierUnit,VolumeMultiple,CreateDate,ExpireDate,StartDelivDate,EndDelivDate\n";
+            string csv_head = "HTSCSecurityID,Symbol,SecurityIDSource,SecurityType,ListDate,TickSize,ExchangeSymbol,OptionUnderlyingSecurityID,OptionUnderlyingSymbol,OptionCallOrPut,OptionTickSize,OptionExercisePrice,OptionStartDate,OptionEndDate,OptionExerciseDate,OptionDeliveryDate,OptionContractMultiplierUnit,VolumeMultiple,CreateDate,ExpireDate,StartDelivDate,EndDelivDate,PreClosePx,MaxPx,MinPx\n";
             fout_.write(csv_head.data(), csv_head.size());
             fout_.flush();
         }
@@ -187,6 +187,9 @@ namespace co {
                                      << "," << p.expiredate()
                                      << ","  << p.startdelivdate()
                                      << "," << p.enddelivdate()
+                                     << "," << p.preclosepx()
+                                     << "," << p.maxpx()
+                                     << "," << p.minpx()
                                      << "\n";
                             std::string line = ss.str();
                             fout_.write(line.data(), line.size());
