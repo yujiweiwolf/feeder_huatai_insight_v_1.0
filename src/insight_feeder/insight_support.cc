@@ -106,7 +106,6 @@ namespace co {
         co::fbs::QTickT& m = ctx->PrepareQTick();
         if (m.dtype <= 0) {
             m.dtype = kDTypeStock;
-            m.src = kSrcQTickLevel2; // ����Դ
         }
         m.pre_close = i2f(p.preclosepx()); // ���ռ�
         m.upper_limit = i2f(p.maxpx()); // ��ͣ��
@@ -189,7 +188,6 @@ namespace co {
         co::fbs::QTickT& m = ctx->PrepareQTick();
         if (m.dtype <= 0) {
             m.dtype = kDTypeStock;
-            m.src = kSrcQTickLevel2; // ����Դ
         }
         m.pre_close = i2f(p.preclosepx()); // ���ռ�
         m.upper_limit = i2f(p.maxpx()); // ��ͣ��
@@ -251,7 +249,6 @@ namespace co {
         co::fbs::QTickT& m = ctx->PrepareQTick();
         if (m.dtype <= 0) {
             m.dtype = kDTypeStock;
-            m.src = kSrcQTickLevel2; // ����Դ
         }
         m.pre_close = i2f(p.preclosepx()); // ���ռ�
         m.upper_limit = i2f(p.maxpx()); // ��ͣ��
@@ -313,7 +310,6 @@ namespace co {
         co::fbs::QTickT& m = ctx->PrepareQTick();
         if (m.dtype <= 0) {
             m.dtype = kDTypeIndex;
-            m.src = kSrcQTickLevel2; // ����Դ
         }
         m.pre_close = i2f(p.preclosepx()); // ���ռ�
         m.upper_limit = i2f(p.maxpx()); // ��ͣ��
@@ -588,8 +584,11 @@ namespace co {
         co::fbs::QTickT& m = ctx->PrepareQTick();
         if (m.dtype <= 0) {
             m.dtype = kDTypeOption;
-            m.src = kSrcQTickLevel2;
             m.market = market;
+        }
+        // 没有读到静态信息，直接返回
+        if (m.expire_date <= 0 || m.list_date <= 0) {
+            return "";
         }
         m.pre_close = i2f(p.preclosepx());
         m.pre_settle = i2f(p.presettleprice());
@@ -674,12 +673,11 @@ namespace co {
         co::fbs::QTickT& m = ctx->PrepareQTick();
         if (m.dtype <= 0) {
             m.dtype = kDTypeFuture;
-            if (market == kMarketCFFEX) {
-                m.src = kSrcQTickLevel2;
-            } else {
-                m.src = kSrcQTickLevel1;
-            }
             m.market = market;
+        }
+        // 没有读到静态信息，直接返回
+        if (m.expire_date <= 0 || m.list_date <= 0) {
+            return "";
         }
         m.pre_close = i2f(p.preclosepx());
         m.pre_settle = i2f(p.presettleprice());

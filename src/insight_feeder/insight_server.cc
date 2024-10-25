@@ -36,9 +36,8 @@ namespace co {
             return;
         }
         handler_ = new InsightHandler();
-
+        handler_->Start();
         client_->RegistHandle(handler_);
-        client_->set_handle_pool_thread_count(1);
         Login();
         QueryContracts();
         SubQuotation();
@@ -93,7 +92,7 @@ namespace co {
             std::unique_ptr<MDQueryRequest> request(new MDQueryRequest());
             request->set_querytype(QUERY_TYPE_LATEST_BASE_INFORMATION);
             SecuritySourceType* security_source_type = request->add_securitysourcetype();
-            // XSHG 是上交所, XSHE 是深交所, CNI 是国证指数有限公司， CSI 是中证指数有限公司
+            // XSHG 是上交所, XSHE 是深交所, CNI 是国证指数有限公司， CSI 是中证指数有限公司, XBSE 北交所
             // CCFX 中国金融期货交易所, XSGE 上海期货交易所
             // XDCE 大连商品交易所, XZCE 郑州商品交易所
             LOG_INFO << "query index: " << i;
@@ -104,22 +103,27 @@ namespace co {
             } else if (i == 2) {
                 security_source_type->set_securityidsource(CNI);
             } else if (i == 3) {
-                security_source_type->set_securityidsource(XBSE);  // 无CSI
+                security_source_type->set_securityidsource(XBSE);  // 无 CSI, 有 XBSE
             } else if (i == 4) {
                 security_source_type->set_securityidsource(CCFX);
             }
 
             std::vector<MDQueryResponse*>* responses = nullptr;
-            LOG_INFO << "query contracts ...";
-            handler_->ClearQueryStatus();
-            int rc = client_->RequestMDQuery(&(*request), responses);
-            if (rc != 0) {
-                LOG_ERROR << "query contracts failed: " << get_error_code_value(rc)
-                    << ", type: " << i << " , retry in 3s ...";
-                x::Sleep(2000);
+            int query_index = 0;
+            for (int index = 0; index < 10; index++) {
+                handler_->ClearQueryStatus();
+                int rc = client_->RequestMDQuery(&(*request), responses);
+                if (rc != 0) {
+                    LOG_ERROR << "query contracts failed: " << get_error_code_value(rc)
+                              << ", type: " << i << " , retry in 3s ...";
+                    x::Sleep(10000);
+                } else {
+                    break;
+                }
+            }
+            if (responses == nullptr) {
                 continue;
             }
-
             for (unsigned int i = 0; i < responses->size(); ++i) {
                 if (!responses->at(i)->issuccess()) {
                     continue;
